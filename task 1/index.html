@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>JS Runtime &amp; Async Playground</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>JS Runtime &amp; Async Playground</h1>
+    <p class="subtitle">Closures · Call Stack · Promises · async/await · Event Loop</p>
+  </header>
+
+  <main>
+    <section class="panel" id="tasks-panel">
+      <div class="panel-header">
+        <h2>Tasks</h2>
+        <div class="panel-actions">
+          <button id="run-all-btn" class="btn primary">Run All Tasks</button>
+          <button id="run-sequential-btn" class="btn">Run Sequential</button>
+          <button id="run-concurrent-btn" class="btn">Run Concurrent</button>
+          <button id="reset-all-btn" class="btn ghost">Reset All</button>
+        </div>
+      </div>
+
+      <div id="task-list" class="task-list"></div>
+
+      <div id="all-tasks-banner" class="banner hidden"></div>
+    </section>
+
+    <section class="panel" id="comparison-panel">
+      <h2>Sequential vs Concurrent</h2>
+      <p class="hint">
+        Runs each task once with <code>await</code> in a row, then resets and runs them all
+        together with <code>Promise.allSettled</code>. Compare the total time.
+      </p>
+      <div class="comparison-results">
+        <div class="result-box">
+          <h3>Sequential</h3>
+          <p id="sequential-time">—</p>
+        </div>
+        <div class="result-box">
+          <h3>Concurrent</h3>
+          <p id="concurrent-time">—</p>
+        </div>
+      </div>
+      <p id="comparison-explanation" class="explanation"></p>
+    </section>
+
+    <section class="panel" id="eventloop-panel">
+      <h2>Event Loop Demo</h2>
+      <p class="hint">
+        Predict the console output first (see README), then run the demo and compare
+        against the real execution order shown below.
+      </p>
+      <button id="run-eventloop-btn" class="btn primary">Run Event Loop Demo</button>
+      <ol id="eventloop-log" class="log"></ol>
+    </section>
+  </main>
+
+  <footer>
+    <p>Vanilla HTML / CSS / JS — no frameworks, no dependencies.</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
