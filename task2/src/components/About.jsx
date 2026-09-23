@@ -11,16 +11,27 @@ export default function About() {
     >
       <h2 className="section-title">About Me</h2>
       <p className="section-text">
-        I'm a student at <strong>KBTU</strong> (Kazakh-British Technical
-        University), studying Computing Technology and Software. I'm
-        interested in software development, web development, and modern
-        technologies, and I enjoy building projects that turn ideas into
-        working products.
+        Hi! I'm Alen Omarbayev, a Computing Technology and Software student
+        at Kazakh-British Technical University (KBTU).
       </p>
       <p className="section-text">
-        I have hands-on experience with React, JavaScript, TypeScript,
-        Python, C++, Swift, and SQL. Alongside my studies, I work as a
-        Content Manager / developer at <strong>LG Kazakhstan</strong>.
+        I'm interested in software development, web technologies, UI/UX,
+        product management and building useful digital products. I enjoy
+        turning ideas into functional and visually appealing applications
+        while constantly learning new technologies and improving my
+        development skills.
+      </p>
+      <p className="section-text">
+        Alongside my studies, I work with LG Electronics Kazakhstan, where I
+        combine technical skills with website development. My work includes
+        maintaining web content, working with website platforms,
+        collaborating with designers and project managers, and helping
+        improve digital experiences.
+      </p>
+      <p className="section-text">
+        I'm always interested in learning something new, experimenting with
+        different technologies, and working on projects that allow me to
+        grow as a developer.
       </p>
     </section>
   );

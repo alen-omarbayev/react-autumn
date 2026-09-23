@@ -16,14 +16,18 @@ export default function Hero() {
           Alen Omarbayev
         </h1>
         <p className="hero-role hero-anim" style={{ animationDelay: "180ms" }}>
-          Computing Technology &amp; Software Student
+          Software Developer &amp; Computing Technology Student
         </p>
         <p className="hero-tagline hero-anim" style={{ animationDelay: "270ms" }}>
-          KBTU student passionate about software and web development, building
-          things with React, TypeScript, and modern tools — currently also
-          working as a Content Manager / developer at LG Kazakhstan.
+          I'm a Computing Technology and Software student at KBTU, passionate
+          about building modern web applications and exploring new
+          technologies.
         </p>
-        <div className="hero-actions hero-anim" style={{ animationDelay: "360ms" }}>
+        <p className="hero-current hero-anim" style={{ animationDelay: "350ms" }}>
+          <span>Currently:</span>
+          <strong>Web Developer / Content Manager at LG Kazakhstan</strong>
+        </p>
+        <div className="hero-actions hero-anim" style={{ animationDelay: "440ms" }}>
           <a className="btn btn-primary" href="#contact">
             Contact Me
           </a>

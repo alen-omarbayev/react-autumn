@@ -1,7 +1,5 @@
 import useInView from "../hooks/useInView";
 
-// LinkedIn and Instagram are placeholders — replace the href/value with your
-// real profile links before submitting.
 const contacts = [
   {
     label: "GitHub",
@@ -10,13 +8,13 @@ const contacts = [
   },
   {
     label: "LinkedIn",
-    value: "linkedin.com/in/your-profile",
-    href: "https://linkedin.com/in/your-profile",
+    value: "linkedin.com/in/alen-omarbayev",
+    href: "https://www.linkedin.com/in/alen-omarbayev-220835350/",
   },
   {
     label: "Instagram",
-    value: "@your.handle",
-    href: "https://instagram.com/your.handle",
+    value: "@alenokoleno",
+    href: "https://www.instagram.com/alenokoleno/",
   },
   { label: "Location", value: "Planet Earth 🌍", href: null },
 ];
@@ -32,8 +30,8 @@ export default function Contact() {
     >
       <h2 className="section-title">Contact</h2>
       <p className="section-text">
-        Feel free to reach out — only safe, public links here, no phone
-        number, address, or personal email.
+        Let's connect and build something interesting — only safe, public
+        links here, no phone number, address, or personal email.
       </p>
       <ul className="contact-list">
         {contacts.map((c, index) => (

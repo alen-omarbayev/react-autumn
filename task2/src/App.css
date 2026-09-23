@@ -194,7 +194,25 @@
   font-size: 1.05rem;
   line-height: 1.6;
   max-width: 32rem;
-  margin: 0 0 2rem;
+  margin: 0 0 1.25rem;
+}
+
+.hero-current {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 1.75rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent-2) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-2) 30%, transparent);
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.hero-current strong {
+  color: var(--text);
+  font-weight: 600;
 }
 
 .hero-actions {
@@ -317,7 +335,47 @@ main {
   margin-bottom: 0;
 }
 
+/* ---------- Education ---------- */
+.education-card {
+  border-left: 3px solid var(--accent);
+  padding-left: 1rem;
+}
+
+.education-org {
+  margin: 0 0 0.3rem;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.education-degree {
+  margin: 0 0 0.3rem;
+  color: var(--muted);
+}
+
+.education-location {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
 /* ---------- Skills ---------- */
+.skills-group {
+  margin-bottom: 1.5rem;
+}
+
+.skills-group:last-child {
+  margin-bottom: 0;
+}
+
+.skills-group-title {
+  margin: 0 0 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
 .skills-grid {
   display: flex;
   flex-wrap: wrap;
@@ -358,6 +416,60 @@ main {
 
 .skill-chip.stagger-item.in-view:hover {
   transform: translateY(-6px) scale(1.03);
+}
+
+/* ---------- What I Like ---------- */
+.likes-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.like-card {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  transition: transform 0.25s ease, border-color 0.25s ease,
+    opacity 0.4s ease;
+}
+
+.like-card:hover {
+  transform: translateY(-4px);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+
+.like-card h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1rem;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.like-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.like-card.stagger-item {
+  opacity: 0;
+  transform: translateY(14px);
+}
+
+.like-card.stagger-item.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.like-card.stagger-item.in-view:hover {
+  transform: translateY(-4px);
 }
 
 /* ---------- Contact ---------- */
@@ -504,11 +616,17 @@ main {
   }
 
   .navbar-links {
-    gap: 1rem;
+    gap: 0.75rem 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
   }
 
   .section:hover {
     transform: none;
+  }
+
+  .likes-grid {
+    grid-template-columns: 1fr;
   }
 }
 
