@@ -1,3 +1,5 @@
+import useInView from "../hooks/useInView";
+
 const skills = [
   "React",
   "JavaScript",
@@ -10,12 +12,22 @@ const skills = [
 ];
 
 export default function Skills() {
+  const [ref, inView] = useInView();
+
   return (
-    <section id="skills" className="section">
+    <section
+      id="skills"
+      ref={ref}
+      className={`section reveal ${inView ? "in-view" : ""}`}
+    >
       <h2 className="section-title">Skills</h2>
       <ul className="skills-grid">
-        {skills.map((skill) => (
-          <li key={skill} className="skill-chip">
+        {skills.map((skill, index) => (
+          <li
+            key={skill}
+            className={`skill-chip stagger-item ${inView ? "in-view" : ""}`}
+            style={{ transitionDelay: inView ? `${index * 60}ms` : "0ms" }}
+          >
             {skill}
           </li>
         ))}

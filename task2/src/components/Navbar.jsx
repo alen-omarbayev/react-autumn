@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+
 const links = [
   { href: "#about", label: "About" },
   { href: "#skills", label: "Skills" },
@@ -5,8 +7,17 @@ const links = [
 ];
 
 export default function Navbar() {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
-    <nav className="navbar">
+    <nav className={`navbar ${scrolled ? "navbar-scrolled" : ""}`}>
       <a className="navbar-brand" href="#top">
         Alen<span className="dot">.</span>
       </a>
