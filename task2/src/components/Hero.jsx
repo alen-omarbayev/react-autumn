@@ -1,4 +1,4 @@
-import avatar from "../assets/avatar-placeholder.svg";
+import avatar from "../assets/profile.jpeg";
 
 export default function Hero() {
   return (

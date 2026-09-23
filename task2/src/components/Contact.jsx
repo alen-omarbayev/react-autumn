@@ -16,7 +16,7 @@ const contacts = [
     value: "@alenokoleno",
     href: "https://www.instagram.com/alenokoleno/",
   },
-  { label: "Location", value: "Planet Earth 🌍", href: null },
+  { label: "Phone Number", value: "67", href: null },
 ];
 
 export default function Contact() {
