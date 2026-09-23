@@ -1,0 +1,46 @@
+// LinkedIn and Instagram are placeholders — replace the href/value with your
+// real profile links before submitting.
+const contacts = [
+  {
+    label: "GitHub",
+    value: "github.com/alen-omarbayev",
+    href: "https://github.com/alen-omarbayev",
+  },
+  {
+    label: "LinkedIn",
+    value: "linkedin.com/in/your-profile",
+    href: "https://linkedin.com/in/your-profile",
+  },
+  {
+    label: "Instagram",
+    value: "@your.handle",
+    href: "https://instagram.com/your.handle",
+  },
+  { label: "Location", value: "Planet Earth 🌍", href: null },
+];
+
+export default function Contact() {
+  return (
+    <section id="contact" className="section">
+      <h2 className="section-title">Contact</h2>
+      <p className="section-text">
+        Feel free to reach out — only safe, public links here, no phone
+        number, address, or personal email.
+      </p>
+      <ul className="contact-list">
+        {contacts.map((c) => (
+          <li key={c.label} className="contact-item">
+            <span className="contact-label">{c.label}</span>
+            {c.href ? (
+              <a href={c.href} target="_blank" rel="noreferrer">
+                {c.value}
+              </a>
+            ) : (
+              <span>{c.value}</span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
