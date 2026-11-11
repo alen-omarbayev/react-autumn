@@ -1,0 +1,1 @@
+import{c as e,i as t,o as n}from"./ErrorMessage-CPrHWGhI.js";import{_ as r,c as i}from"./index-Cjy2leV8.js";function a(t){return e({queryKey:i.list(t),queryFn:()=>n(t),placeholderData:r})}function o(){return e({queryKey:i.genres,queryFn:t,staleTime:3e5})}export{o as n,a as t};
