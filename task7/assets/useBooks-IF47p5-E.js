@@ -1,0 +1,1 @@
+import{n as e}from"./ErrorMessage-Bm2ET63c.js";import{l as t,v as n}from"./index-DWd3aUHi.js";import{a as r,r as i}from"./service-OvH5f3R2.js";function a(i){return e({queryKey:t.list(i),queryFn:()=>r(i),placeholderData:n})}function o(){return e({queryKey:t.genres,queryFn:i,staleTime:3e5})}export{o as n,a as t};
