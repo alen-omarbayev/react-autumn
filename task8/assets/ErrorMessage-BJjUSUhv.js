@@ -1,0 +1,1 @@
+import{t as e}from"./jsx-runtime-Dk72oS4N.js";var t=e();function n({text:e,onRetry:n}){return(0,t.jsxs)(`div`,{className:`message error`,children:[(0,t.jsxs)(`p`,{children:[`Error: `,e]}),n&&(0,t.jsx)(`button`,{onClick:n,children:`Try again`})]})}export{n as t};
