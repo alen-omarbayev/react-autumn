@@ -1,0 +1,400 @@
+=====================================================================
+  ЗАДАНИЕ 8: REDUX TOOLKIT — ПОШАГОВОЕ ОБЪЯСНЕНИЕ
+=====================================================================
+
+Проект: Library Books из task 7. Всё старое работает как раньше:
+маршруты, поиск/фильтры/сортировка/пагинация в URL, добавление/изменение/
+удаление книг, вход Firebase, закрытые страницы, Discover (Open Library),
+PWA (установка, Service Worker, офлайн).
+
+Что поменяли в task 8:
+  - данные с сервера и асинхронные запросы теперь в REDUX TOOLKIT;
+  - TanStack Query (task 6) убрали — иначе одни и те же данные лежали бы
+    в двух местах (задание: "avoid duplicated state");
+  - добавили debounce поиска на странице Books;
+  - у кэшей Service Worker появился префикс task8-.
+
+Запуск:
+    cd task8
+    npm install
+    npm run dev                        -> разработка
+    npm run build && npm run preview   -> собранная версия (с Service Worker)
+    npm run deploy                     -> https://alen-omarbayev.github.io/react-autumn/task8/
+
+Новые библиотеки:
+    npm install @reduxjs/toolkit react-redux
+    npm uninstall @tanstack/react-query
+
+
+---------------------------------------------------------------------
+ШАГ 0. ЧТО ТАКОЕ REDUX (своими словами)
+---------------------------------------------------------------------
+Redux — это ОДНО общее хранилище (store) для данных всего приложения.
+
+  - Компонент не меняет данные сам. Он ОТПРАВЛЯЕТ действие (dispatch(action)).
+  - REDUCER получает (старое состояние, действие) и возвращает новое состояние.
+  - Компоненты ЧИТАЮТ нужный кусок через useSelector и перерисовываются,
+    когда этот кусок меняется.
+
+Поток данных всегда в одну сторону:
+    UI -> dispatch(action) -> reducer -> новый state -> useSelector -> UI
+
+REDUX TOOLKIT (RTK) — официальный "удобный" Redux:
+  - configureStore   — создать store в одну строку;
+  - createSlice      — reducer + actions в одном месте;
+  - createAsyncThunk — асинхронные запросы с pending / fulfilled / rejected;
+  - createSelector   — мемоизированные селекторы;
+  - внутри Immer: в reducer можно писать state.x = 5, RTK сам сделает новую копию.
+
+
+---------------------------------------------------------------------
+ШАГ 1. STORE И PROVIDER
+---------------------------------------------------------------------
+src/store/store.js:
+    export const store = configureStore({
+      reducer: {
+        books: booksReducer,             // state.books
+        bookDetails: bookDetailsReducer, // state.bookDetails
+        discover: discoverReducer,       // state.discover
+      },
+    })
+
+configureStore сам подключает:
+  - redux-thunk (нужен для createAsyncThunk);
+  - Redux DevTools (расширение браузера, видно все действия и state).
+
+src/main.jsx:
+    <Provider store={store}>        // store доступен всем компонентам
+      <AuthProvider>                // вход — как в task 6
+        <App />
+
+
+---------------------------------------------------------------------
+ШАГ 2. ТРИ СЛАЙСА ПО ФИЧАМ (src/features/)
+---------------------------------------------------------------------
+Slice = кусок state + reducer'ы для одной фичи.
+
+1) books (features/books/booksSlice.js) — СПИСКИ книг:
+     list   — текущая страница списка Books + для какого query она загружена
+     all    — все книги (для Dashboard)
+     genres — жанры (для фильтра)
+
+2) bookDetails (features/books/bookDetailsSlice.js) — ОДНА книга и ИЗМЕНЕНИЯ:
+     id, book, status, error, notFound, saving
+
+3) discover (features/discover/discoverSlice.js) — Open Library:
+     search — поиск (список), work — одна книга (детали),
+     fromCache / cachedAt — данные пришли из кэша Service Worker (офлайн)
+
+У каждой асинхронной части есть:
+     status: 'idle' | 'loading' | 'succeeded' | 'failed'
+     error:  текст ошибки или null
+
+Почему 3 слайса, а не один? Каждая фича отвечает за своё: список, одна
+книга, внешний API. Файлы маленькие, их легко читать и тестировать.
+
+
+---------------------------------------------------------------------
+ШАГ 3. THUNKS — АСИНХРОННЫЕ ДЕЙСТВИЯ (createAsyncThunk)
+---------------------------------------------------------------------
+Thunk = функция, которая делает запрос и сама отправляет 3 действия:
+    pending   — запрос начался
+    fulfilled — успех, данные в action.payload
+    rejected  — ошибка, текст в action.error.message
+
+Пример (booksSlice.js):
+    export const fetchBooks = createAsyncThunk('books/fetchBooks',
+      async ({ query }) => await getItemsList(query))
+
+Все thunks проекта:
+    fetchBooks({ query })          СПИСОК книг (поиск, фильтры, сортировка, страница)
+    fetchAllBooks()                все книги для Dashboard
+    fetchGenres()                  жанры
+    fetchBookById({ id })          ДЕТАЛИ книги
+    createBook(data)               МУТАЦИЯ: добавить
+    updateBook({ id, changes })    МУТАЦИЯ / бизнес-операция: изменить,
+                                   выдать книгу / вернуть (смена статуса)
+    deleteBook(id)                 МУТАЦИЯ: удалить
+    searchDiscover({ query, page}) поиск Open Library
+    fetchWork({ id })              книга Open Library
+
+API лежит отдельно в services/ (service.js — fake API, openLibrary.js) —
+слайсы только вызывают эти функции.
+
+
+---------------------------------------------------------------------
+ШАГ 4. extraReducers — ОБРАБОТКА pending / fulfilled / rejected
+---------------------------------------------------------------------
+Thunk создаётся ВНЕ слайса, поэтому его действия обрабатываются в
+extraReducers (а не в reducers):
+
+    builder
+      .addCase(fetchBooks.pending, (state, action) => {
+        state.list.status = 'loading'
+        state.list.query = action.meta.arg.query
+        state.list.requestId = action.meta.requestId
+      })
+      .addCase(fetchBooks.fulfilled, (state, action) => {
+        if (state.list.requestId !== action.meta.requestId) return  // устаревший
+        state.list.status = 'succeeded'
+        state.list.items = action.payload.data
+        ...
+      })
+      .addCase(fetchBooks.rejected, (state, action) => {
+        ...
+        state.list.status = 'failed'
+        state.list.error = action.error.message
+      })
+
+reducers: {} — пустые, потому что синхронных действий нам не нужно:
+всё временное (форма, меню) хранится в useState компонента.
+
+
+---------------------------------------------------------------------
+ШАГ 5. LOADING, ОШИБКИ, ПУСТО, ПОВТОР, УСТАРЕВШИЕ ЗАПРОСЫ
+---------------------------------------------------------------------
+LOADING:  status === 'loading' -> "Loading books..."
+ОШИБКА:   status === 'failed'  -> <ErrorMessage> с кнопкой Try again
+ПУСТО:    items.length === 0   -> "No books found" + Clear filters
+НЕ НАЙДЕНО: notFound           -> "Book not found"
+ОФЛАЙН (Discover): error === 'offline' -> OfflinePage с Retry
+
+ПОВТОР (retry): Try again / Reload вызывают тот же thunk с force: true.
+(fake API специально падает в 10% случаев — удобно показать на защите)
+
+УСТАРЕВШИЕ ЗАПРОСЫ (stale requests):
+  Быстро переключил фильтр Fantasy -> Sci-Fi. Запрос Fantasy был медленный
+  и пришёл ПОСЛЕ Sci-Fi. Без защиты на экране оказались бы книги Fantasy.
+  Решение:
+    - у каждого вызова thunk есть уникальный action.meta.requestId;
+    - в pending сохраняем его: state.list.requestId = action.meta.requestId;
+    - в fulfilled/rejected: если id не совпадает — это старый запрос, return.
+  (В task 5 это делали флагом ignore в useEffect, в task 6 — ключами TanStack Query.)
+
+
+---------------------------------------------------------------------
+ШАГ 6. БЕЗ ЛИШНИХ ЗАПРОСОВ — condition
+---------------------------------------------------------------------
+У createAsyncThunk есть опция condition. Она вызывается ДО запроса.
+return false — запрос не делается вообще (даже pending не отправится).
+
+    condition: ({ query, force }, { getState }) => {
+      const list = getState().books.list
+      if (force) return true                                        // Reload
+      if (list.status === 'loading' && list.query === query) return false   // уже идёт
+      if (list.status === 'succeeded' && list.query === query
+          && isFresh(list.loadedAt) && !list.stale) return false   // уже есть и свежее
+      return true
+    }
+
+Свежесть = 1 минута (FRESH_TIME). Пример: открыл книгу, нажал Back —
+список показывается сразу, без "Loading" и без нового запроса.
+То же для деталей книги, жанров, поиска Discover.
+
+
+---------------------------------------------------------------------
+ШАГ 7. ОБНОВЛЕНИЕ ДАННЫХ ПОСЛЕ ИЗМЕНЕНИЙ
+---------------------------------------------------------------------
+Мутации (createBook, updateBook, deleteBook) объявлены в bookDetailsSlice.
+Но booksSlice тоже "слушает" их в своих extraReducers:
+
+    .addCase(updateBook.fulfilled, (state, action) => {
+      // 1) сразу меняем книгу в уже загруженных списках
+      state.list.items = state.list.items.map(...)
+      // 2) помечаем списки устаревшими
+      state.list.stale = true; state.all.stale = true; state.genres.stale = true
+    })
+
+Хуки следят за stale:
+    useEffect(() => { dispatch(fetchBooks({ query })) }, [dispatch, query, list.stale])
+stale стал true -> эффект сработал -> condition пропускает (stale) -> свежие данные.
+
+Итог: поменял статус книги -> вернулся на Books — новый статус;
+открыл Dashboard — цифры пересчитаны. Удалил — книги нет нигде.
+
+В task 6 это делал queryClient.invalidateQueries, теперь — флаг stale.
+
+
+---------------------------------------------------------------------
+ШАГ 8. СЕЛЕКТОРЫ И МЕМОИЗАЦИЯ (createSelector)
+---------------------------------------------------------------------
+Селектор = функция (state) => нужные данные. Компоненты не знают,
+как устроен state — они вызывают useSelector(selectXxx).
+
+Простые (features/books/booksSelectors.js):
+    selectBooksList   = (state) => state.books.list
+    selectAllBooks    = (state) => state.books.all.items
+    selectGenres      = (state) => state.books.genres.items
+    selectBookDetails = (state) => state.bookDetails
+
+Мемоизированные (createSelector):
+    selectDashboardGenres            — жанры из всех книг по алфавиту
+    selectBooksByGenre               — [{ name: 'Fantasy', count: 4 }, ...]
+    selectFilteredBooks(state, genre)— книги выбранного жанра
+    selectDashboardStats(state, genre)— итог, средний рейтинг, годы, по статусу, по рейтингу
+    selectTopRated(state, genre)     — топ-3
+
+Зачем мемоизация? useSelector вызывает селектор при КАЖДОМ изменении store.
+Если селектор каждый раз создаёт новый массив/объект, компонент
+перерисовывается всегда, даже когда данные те же.
+createSelector запоминает входы (книги, жанр) и результат: входы те же —
+отдаёт ТОТ ЖЕ объект без пересчёта.
+
+Раньше статистика считалась прямо в DashboardPage. Теперь компонент только
+показывает: const stats = useSelector((state) => selectDashboardStats(state, genre))
+
+
+---------------------------------------------------------------------
+ШАГ 9. СВОИ ХУКИ (src/hooks/) — мост между Redux и компонентами
+---------------------------------------------------------------------
+    useBooks(query)          dispatch(fetchBooks) + useSelector(selectBooksList)
+    useAllBooks()            dispatch(fetchAllBooks)
+    useGenres()              dispatch(fetchGenres)
+    useBook(id)              dispatch(fetchBookById)
+    useBookActions()         createBook / updateBook / deleteBook (+ .unwrap())
+    useDiscoverSearch(q, p)  dispatch(searchDiscover)
+    useWork(id)              dispatch(fetchWork)
+    useDebounce(value, 400)  задержка для поиска
+
+.unwrap() — превращает результат thunk в обычный Promise:
+    updateBook(id, changes).then(() => setEditing(false)).catch(err => setActionError(...))
+
+Почему хуки: страницы почти не изменились по сравнению с task 7,
+а dispatch/useSelector в одном месте. Это и есть разделение:
+  Redux (features/) | API (services/) | хуки (hooks/) | UI (components/, pages/)
+
+"Данные другого запроса": в store лежит только последний список.
+Если query в store не совпадает с query страницы, хук не отдаёт эти
+данные (isCurrent = list.query === query) и показывает Loading.
+
+
+---------------------------------------------------------------------
+ШАГ 10. DEBOUNCE ПОИСКА + URL
+---------------------------------------------------------------------
+Фильтры, сортировка, страница — по-прежнему в URL (useSearchParams).
+Redux хранит только ЗАГРУЖЕННЫЕ данные, а не фильтры (иначе было бы
+два источника правды: URL и store).
+
+Debounce (BooksPage.jsx + hooks/useDebounce.js):
+  - текст поля поиска — локальный useState (searchText);
+  - useDebounce(searchText, 400) отдаёт значение, только если 400 мс
+    никто не печатал;
+  - тогда пишем его в URL -> меняется query -> fetchBooks.
+  Печатаешь "hobbit" — один запрос, а не 6.
+  Кнопка Назад / Reset меняет URL -> текст в поле подстраивается.
+
+
+---------------------------------------------------------------------
+ШАГ 11. ЧТО НЕ ПОЛОЖИЛИ В REDUX (и почему)
+---------------------------------------------------------------------
+  Вход (user, loading, error)   -> AuthContext (task 6). Firebase сам хранит
+                                   сессию, задание разрешает оставить Context.
+  Форма, режим Edit, текст ошибки действия, открыто ли меню,
+  выбранный жанр на Dashboard    -> useState. Это временное состояние одной страницы.
+  Фильтры/страница               -> URL.
+Правило: в Redux — то, что нужно НЕСКОЛЬКИМ страницам (книги, детали, поиск).
+
+
+---------------------------------------------------------------------
+ШАГ 12. PWA И ОФЛАЙН — ЧТО ИЗМЕНИЛОСЬ
+---------------------------------------------------------------------
+Service Worker тот же, что в task 7 (sw/service-worker.js).
+Изменение одно: имена кэшей начинаются с task8-:
+    task8-shell-<версия>, task8-images-v1, task8-api-v1
+и activate удаляет только СВОИ старые кэши (name.startsWith('task8-')).
+
+Почему: Cache Storage общий для всего сайта alen-omarbayev.github.io.
+Без префикса task8 при обновлении удалил бы кэши task7 (и наоборот).
+
+Без сети:
+  - приложение открывается из кэша SW;
+  - книги — из localStorage (thunk fetchBooks работает и без сети);
+  - Discover — из кэша SW, thunk получает fromCache и показываем плашку;
+  - если в Discover данные были из кэша, при следующем заходе condition
+    разрешает новый запрос (вдруг сеть вернулась).
+Redux store живёт в памяти: после F5 он пустой и заполняется заново.
+
+
+---------------------------------------------------------------------
+ШАГ 13. СТРУКТУРА
+---------------------------------------------------------------------
+src/
+  store/store.js                       configureStore
+  features/books/booksSlice.js         список, все книги, жанры
+  features/books/bookDetailsSlice.js   одна книга + create/update/delete
+  features/books/booksSelectors.js     селекторы (5 мемоизированных)
+  features/discover/discoverSlice.js   Open Library
+  hooks/useBooks.js, useBook.js, useDiscover.js, useDebounce.js
+  services/                            API, Firebase, Service Worker
+  context/AuthContext.jsx              вход
+  pages/, components/, layouts/        только UI
+Удалено: services/queryClient.js, hooks/useBookMutations.js, hooks/useOpenLibrary.js
+
+
+---------------------------------------------------------------------
+ШАГ 14. КАК ПОКАЗАТЬ НА ЗАЩИТЕ
+---------------------------------------------------------------------
+Лучше поставить расширение Redux DevTools (Chrome Web Store).
+1. Открыть Books -> в DevTools вкладка Redux: books/fetchBooks/pending,
+   потом books/fetchBooks/fulfilled. Во вкладке State видно state.books.list.
+2. Набрать в поиске "hobbit" -> в URL search=hobbit появляется через ~0.4 с,
+   и действий fetchBooks одно, а не на каждую букву (debounce).
+3. Открыть книгу, Back -> нового fetchBooks/pending нет (condition, данные свежие).
+4. Mark as borrowed -> bookDetails/updateBook/fulfilled -> в state.books.list.stale = true
+   -> Back: список перезагрузился, статус новый. Dashboard тоже пересчитан.
+5. Reload / Try again -> запрос с force: true.
+6. Dashboard: смена жанра — selectDashboardStats пересчитывает, вкладка
+   Redux показывает, что новых действий нет (это только селектор).
+7. Network -> Offline -> F5: приложение работает, книги есть (как в task 7).
+
+
+---------------------------------------------------------------------
+ВОПРОСЫ НА ЗАЩИТЕ
+---------------------------------------------------------------------
+В: Что такое store, action, reducer?
+О: store — общее хранилище. action — объект { type, payload } "что случилось".
+   reducer — чистая функция (state, action) -> новый state.
+
+В: Зачем Redux Toolkit, а не чистый Redux?
+О: Меньше кода: createSlice делает actions и reducer, Immer позволяет писать
+   state.x = 1, configureStore сам подключает thunk и DevTools.
+
+В: reducers и extraReducers — разница?
+О: reducers — свои действия слайса (создаются автоматически).
+   extraReducers — реакция на ЧУЖИЕ действия: thunks и действия других слайсов
+   (booksSlice слушает updateBook из bookDetailsSlice).
+
+В: Что делает createAsyncThunk?
+О: Оборачивает async-функцию и сам отправляет pending, fulfilled (payload)
+   или rejected (error). Опция condition может отменить запрос заранее.
+
+В: Как защищаетесь от устаревших ответов?
+О: requestId: сохраняем id последнего запроса в pending, а в fulfilled
+   выбрасываем ответ с другим id.
+
+В: Как избегаете лишних запросов?
+О: condition: если данные уже грузятся или свежие и не stale — return false.
+
+В: Как обновляются данные после изменения?
+О: booksSlice ловит createBook/updateBook/deleteBook.fulfilled, сразу правит
+   списки и ставит stale = true; хуки видят stale и перезапрашивают.
+
+В: Зачем createSelector?
+О: Мемоизация: если входы не изменились, возвращает прошлый результат —
+   нет лишних вычислений и перерисовок.
+
+В: Почему вход не в Redux?
+О: Firebase сам хранит и восстанавливает сессию, AuthContext из task 6 уже
+   это делает, задание разрешает оставить Context. Дублировать user в Redux незачем.
+
+В: Почему убрали TanStack Query?
+О: Иначе одни и те же данные были бы и в TanStack, и в Redux — дублирование.
+   Redux теперь единственный источник серверных данных.
+
+В: Почему фильтры не в Redux?
+О: Они в URL — так работают ссылки, F5 и кнопки Назад/Вперёд. Хранить их ещё
+   и в Redux = два источника правды.
+
+В: Работает ли Redux без интернета?
+О: Redux — просто объект в памяти, ему сеть не нужна. Данные берутся из
+   localStorage (книги) и кэша Service Worker (Discover).

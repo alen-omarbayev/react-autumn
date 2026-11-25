@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#5b3a29" />
+    <title>Offline — Library Books</title>
+    <!-- Эта страница лежит в кэше Service Worker. Её показывают, когда нет интернета
+         и нужную страницу не получилось открыть. Поэтому все стили - внутри файла. -->
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        background: #f4f1ec;
+        color: #2b2b2b;
+      }
+      .box {
+        max-width: 420px;
+        width: 100%;
+        padding: 32px 24px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        text-align: center;
+      }
+      .icon { font-size: 56px; }
+      h1 { color: #5b3a29; margin: 8px 0; }
+      p { color: #555; line-height: 1.5; }
+      button {
+        font: inherit;
+        min-height: 44px;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        background: #5b3a29;
+        color: white;
+        cursor: pointer;
+      }
+      .status { margin-top: 12px; color: #b3261e; min-height: 1.5em; }
+    </style>
+  </head>
+  <body>
+    <div class="box">
+      <div class="icon">📡</div>
+      <h1>You are offline</h1>
+      <p>This page could not be loaded because there is no internet connection.
+        Pages and books you opened before are still available.</p>
+      <button id="retry">Retry connection</button>
+      <p class="status" id="status"></p>
+    </div>
+
+    <script>
+      // Retry: пробуем загрузить приложение. Получилось - открываем его, нет - пишем сообщение.
+      document.getElementById('retry').addEventListener('click', function () {
+        // ?check=... - чтобы запрос не взялся из кэша, а реально пошёл в сеть
+        fetch('./manifest.json?check=' + Date.now(), { cache: 'no-store' })
+          .then(function () { window.location.href = './'; })
+          .catch(function () {
+            document.getElementById('status').textContent = 'Still offline. Try again later.';
+          });
+      });
+      // интернет вернулся сам - сразу возвращаемся в приложение
+      window.addEventListener('online', function () { window.location.href = './'; });
+    </script>
+  </body>
+</html>
